@@ -1,0 +1,110 @@
+package memory;
+
+public class SharedMatrix {
+    private volatile SharedVector[] vectors = {}; // underlying vectors
+
+    public SharedMatrix() {
+        this.vectors=null;
+    }
+
+    public SharedMatrix(double[][] matrix) {
+        if(matrix==null || matrix.length==0 || matrix[0].length==0){
+            throw new RuntimeException("Ilegal input");
+        }
+        vectors=new SharedVector[matrix.length];
+        for(int i=0;i<matrix.length;i++){
+            double[] vector=new double[matrix[i].length];
+            for(int j=0;j<matrix[0].length;j++){
+                vector[j]=matrix[i][j];
+            }
+            this.vectors[i]=new SharedVector(vector,VectorOrientation.ROW_MAJOR);
+        }
+    }
+
+    public void loadRowMajor(double[][] matrix) {
+      if(matrix==null || matrix.length==0 || matrix[0].length==0){
+            throw new RuntimeException("Ilegal input");
+        }
+        vectors=new SharedVector[matrix.length];
+        for(int i=0;i<matrix.length;i++){
+            double[] vector=new double[matrix[i].length];
+            for(int j=0;j<matrix[0].length;j++){
+                vector[j]=matrix[i][j];
+            }
+            this.vectors[i]=new SharedVector(vector,VectorOrientation.ROW_MAJOR);
+        }
+    }
+
+
+    public void loadColumnMajor(double[][] matrix) {
+        if(matrix==null || matrix.length==0 || matrix[0].length==0){
+            throw new RuntimeException("Ilegal input");
+        }
+        int row = matrix.length;
+        int col = matrix[0].length;
+        vectors=new SharedVector[col];
+        for(int j=0;j<col;j++){
+            double[] vector=new double[row];
+            for(int i=0;i<row;i++){
+                vector[i]=matrix[i][j];
+            }
+            this.vectors[j]=new SharedVector(vector,VectorOrientation.COLUMN_MAJOR);
+        }
+    }
+
+    public double[][] readRowMajor() {
+        // return matrix contents as a row-major double[][]
+        int row=vectors.length;
+        int col=vectors[0].length();
+        double[][] output=new double[row][col];
+        for(int i=0;i<row;i++){
+            for(int j=0;j<col;j++){
+                output[i][j]=vectors[i].get(j);
+            }
+        }
+        return output;
+    }
+
+    public SharedVector get(int index) {
+        //return vector at index
+        return vectors[index];
+    }
+
+    public int length() {
+        //return number of stored vectors
+        return vectors.length;
+    }
+
+    public VectorOrientation getOrientation() {
+        //return orientation
+        return vectors[0].getOrientation();
+    }
+
+    private void acquireAllVectorReadLocks(SharedVector[] vecs) {
+        // acquire read lock for each vector
+        for(int i=0;i<vectors.length;i++){
+            vectors[i].readLock();
+        }
+    }
+
+    private void releaseAllVectorReadLocks(SharedVector[] vecs) {
+         // acquire read unlock for each vector
+        for(int i=0;i<vectors.length;i++){
+            vectors[i].readUnlock();
+        }
+    }
+
+    private void acquireAllVectorWriteLocks(SharedVector[] vecs) {
+        // acquire write lock for each vector
+        for(int i=0;i<vectors.length;i++){
+            vectors[i].writeLock();
+        }
+    }
+
+    private void releaseAllVectorWriteLocks(SharedVector[] vecs) {
+        // TODO: release write locks
+         for(int i=0;i<vectors.length;i++){
+            vectors[i].writeUnlock();
+        }
+    }
+}
