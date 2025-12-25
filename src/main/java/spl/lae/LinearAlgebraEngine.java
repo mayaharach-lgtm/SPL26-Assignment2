@@ -139,4 +139,14 @@ public class LinearAlgebraEngine {
         // return summary of worker activity
         return this.executor.getWorkerReport();
     }
+
+    public void shutdown() {
+        //force shutdown in case of errors
+        try {
+            this.executor.shutdown();
+        } 
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
 }
