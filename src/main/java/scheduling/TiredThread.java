@@ -56,10 +56,13 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
      * it throws IllegalStateException.
      */
     public void newTask(Runnable task) {
-       if(this.isBusy()){
-        throw new IllegalStateException("Thread is busy");
-       }
-       handoff.offer(task);
+       try {
+          handoff.put(task); 
+       } 
+       catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new RuntimeException("Interrupted while submitting task", e);
+        }
     }
 
     /**
@@ -97,6 +100,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
         } 
         catch(InterruptedException e) {
             Thread.currentThread().interrupt();
+
             break;
         }
        }
@@ -104,10 +108,10 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {
 
     @Override
     public int compareTo(TiredThread o) {
-        if(this.fatigueFactor<o.fatigueFactor){
+        if(this.getFatigue()<o.getFatigue()){
             return -1;
         }
-        else if(this.fatigueFactor>o.fatigueFactor){
+        else if(this.getFatigue()>o.getFatigue()){
             return 1;
         }
         else

@@ -21,12 +21,25 @@ public class LinearAlgebraEngine {
 
     public ComputationNode run(ComputationNode computationRoot) {
         // resolve computation tree step by step until final matrix is produced
-        if(computationRoot!=null){
-            computationRoot.associativeNesting();
-            ComputationNode next=computationRoot.findResolvable();
-            while(next!=null){
-                loadAndCompute(next);
-                next=computationRoot.findResolvable();
+         try{   
+            if(computationRoot!=null){
+                computationRoot.associativeNesting();
+                ComputationNode next=computationRoot.findResolvable();
+                while(next!=null){
+                    loadAndCompute(next);
+                    next=computationRoot.findResolvable();
+                }
+            }
+        }
+        catch(Exception e){
+            throw new IllegalArgumentException(e.getMessage());
+        }
+        finally{
+            try{
+                executor.shutdown();
+            }
+            catch(InterruptedException e){
+                System.err.println("Shutdown was interrupted");
             }
         }
         return computationRoot;
@@ -35,20 +48,24 @@ public class LinearAlgebraEngine {
     public void loadAndCompute(ComputationNode node) {
         // load operand matrices
         // create compute tasks & submit tasks to executor
-        ComputationNodeType type=node.getNodeType();
-        if(node.getChildren().get(0)!=null){
-            ComputationNode left = node.getChildren().get(0);
-            leftMatrix=new SharedMatrix(left.getMatrix());
-        }
-        if(node.getChildren().get(1)!=null){
-            ComputationNode right = node.getChildren().get(1);
-            rightMatrix=new SharedMatrix(right.getMatrix());
+        ComputationNodeType type = node.getNodeType();
+        List<ComputationNode> ch = node.getChildren();
+        if (ch == null || ch.isEmpty())
+            throw new IllegalArgumentException("Node has no operands");
+        ComputationNode left = ch.get(0);
+        leftMatrix = new SharedMatrix(left.getMatrix());
+        rightMatrix = null;
+        if (type == ComputationNodeType.ADD || type == ComputationNodeType.MULTIPLY) {
+            if (ch.size() != 2) throw new IllegalArgumentException("Binary op requires 2 operands");
+                ComputationNode right = ch.get(1);
+            rightMatrix = new SharedMatrix(right.getMatrix());
         }
 
         if(type==ComputationNodeType.ADD){
             this.executor.submitAll(createAddTasks());
         }
         else if(type==ComputationNodeType.MULTIPLY){
+            rightMatrix.loadColumnMajor(rightMatrix.readRowMajor());
             this.executor.submitAll(createMultiplyTasks());
         }
         else if(type==ComputationNodeType.NEGATE){
@@ -76,7 +93,7 @@ public class LinearAlgebraEngine {
             }
         }
         else {
-            throw new RuntimeException("Matrix dimensions do not match for addition");
+            throw new IllegalArgumentException("Matrix dimensions do not match for addition");
         }
         return output;
     }
@@ -84,7 +101,13 @@ public class LinearAlgebraEngine {
     public List<Runnable> createMultiplyTasks() {
         // return tasks that perform row × matrix multiplication
         List <Runnable> output=new LinkedList<Runnable>();
-        if(this.leftMatrix.get(0).length()==this.rightMatrix.length()){
+        if (leftMatrix == null || rightMatrix == null) {
+            throw new IllegalArgumentException("null matrix");
+        }
+        if (leftMatrix.get(0) == null || rightMatrix.get(0) == null) {
+            throw new IllegalArgumentException("empty matrix");
+        }
+        if(leftMatrix.get(0).length() == rightMatrix.get(0).length()){
             for(int i=0;i<this.leftMatrix.length();i++){
                 final int rowIndex = i;
                 Runnable task= ()->{
@@ -94,7 +117,7 @@ public class LinearAlgebraEngine {
             }
         }
         else {
-            throw new RuntimeException("Matrix dimensions do not match for multiply");
+            throw new IllegalArgumentException("Matrix dimensions do not match for multiply");
         }
         return output;
     }
@@ -112,7 +135,7 @@ public class LinearAlgebraEngine {
             }
         }
         else {
-            throw new RuntimeException("Matrix is null");
+            throw new IllegalArgumentException("Matrix is null");
         }
         return output;
     }
@@ -130,7 +153,7 @@ public class LinearAlgebraEngine {
             }
         }
         else {
-            throw new RuntimeException("Matrix is null");
+            throw new IllegalArgumentException("Matrix is null");
         }
         return output;
     }
@@ -140,13 +163,5 @@ public class LinearAlgebraEngine {
         return this.executor.getWorkerReport();
     }
 
-    public void shutdown() {
-        //force shutdown in case of errors
-        try {
-            this.executor.shutdown();
-        } 
-        catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
+    
 }

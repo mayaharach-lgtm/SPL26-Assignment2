@@ -15,6 +15,7 @@ public class SharedVector {
     public double get(int index) {
         readLock();
         double output=0;
+
         try{
             output=vector[index];                                                                    
         }
@@ -111,12 +112,17 @@ public class SharedVector {
     }
 
     public double dot(SharedVector other) {
+        if((this.vector.length != other.vector.length))
+            throw new RuntimeException("Illegal action- vectors should be in the same size");
         this.readLock();
         other.readLock();
         double output=0;
-        if ((this.vector.length != other.vector.length)||(this.orientation==VectorOrientation.ROW_MAJOR && other.orientation==VectorOrientation.COLUMN_MAJOR))       
-            throw new RuntimeException("Illegal action- vectors should be in the same size and different orientation");
         try{
+            if (this.vector.length != other.vector.length)
+                throw new RuntimeException("Illegal action- vectors should be in the same size");
+
+            if (this.orientation == other.orientation)
+                throw new RuntimeException("Illegal action- vectors should be in different orientation");
             for(int i=0;i<vector.length;i++){
                 output+=this.vector[i]*other.vector[i];
             }
@@ -129,8 +135,13 @@ public class SharedVector {
     }
         
     public void vecMatMul(SharedMatrix matrix) {
-        if(this.vector.length!=matrix.get(0).length() || this.orientation!=VectorOrientation.ROW_MAJOR)
-             throw new RuntimeException("Not computable");
+        if (matrix == null || matrix.get(0) == null)
+            throw new RuntimeException("Not computable");
+        if (this.orientation != VectorOrientation.ROW_MAJOR)
+            throw new RuntimeException("Not computable");
+        if (this.vector.length != matrix.get(0).length())
+            throw new RuntimeException("Not computable");
+
         double[] newVector= new double[matrix.length()];
         writeLock();
         try{

@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.management.RuntimeErrorException;
 
 public class TiredExecutor {
-
     private final TiredThread[] workers;
     private final PriorityBlockingQueue<TiredThread> idleMinHeap = new PriorityBlockingQueue<>();
     private final AtomicInteger inFlight = new AtomicInteger(0);
@@ -17,12 +16,18 @@ public class TiredExecutor {
         workers=new TiredThread[numThreads];
         for(int i=0;i<workers.length;i++){
             workers[i]=new TiredThread(i, 0.5 + Math.random());
+            workers[i].start();
+            idleMinHeap.add(workers[i]);
         }
     }
 
     public void submit(Runnable task) {
+        if (workers.length == 0) {
+            task.run();
+            return;
+        }
         synchronized (this) {
-            while (countFreeWorkers() == 0) {
+            while (idleMinHeap.isEmpty()) {
                 try {
                     this.wait();
                 }
@@ -31,7 +36,7 @@ public class TiredExecutor {
                     return;
                 }
             }
-            TiredThread bestWorker = findEnergeticWorker();
+            TiredThread currworker = idleMinHeap.poll();
             inFlight.incrementAndGet();
             Runnable newtask = () -> {
                 try {
@@ -43,8 +48,9 @@ public class TiredExecutor {
                         this.notifyAll(); 
                     }
                 }
+                idleMinHeap.add(currworker);
             };
-            bestWorker.newTask(newtask);
+            currworker.newTask(newtask);
         }
     }
     
@@ -93,30 +99,5 @@ public class TiredExecutor {
         }
 
         return report;
-    }
-
-    
-
-
-    //Helper Function- finds and returns the least tired worker
-    private TiredThread findEnergeticWorker() {
-    TiredThread energetic = null;
-    for (TiredThread w : workers) {
-        if (w != null && !w.isBusy()) {
-            if (energetic == null || w.getFatigue() < energetic.getFatigue()) {
-                energetic = w;
-            }
-        }
-    }
-    return energetic;
-}
-
-    //Helper Function- find the number of free workers
-    private int countFreeWorkers() {
-        int count = 0;
-        for (TiredThread w : workers) {
-            if (w != null && !w.isBusy()) count++;
-        }
-        return count;
     }
 }

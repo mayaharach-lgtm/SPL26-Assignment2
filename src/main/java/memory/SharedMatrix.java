@@ -54,24 +54,46 @@ public class SharedMatrix {
 
     public double[][] readRowMajor() {
         // return matrix contents as a row-major double[][]
-        int row=vectors.length;
-        int col=vectors[0].length();
-        double[][] output=new double[row][col];
-        for(int i=0;i<row;i++){
-            for(int j=0;j<col;j++){
-                output[i][j]=vectors[i].get(j);
-            }
+        if (vectors == null || vectors.length == 0 || vectors[0] == null) {
+            throw new IllegalArgumentException("Empty matrix");
         }
-        return output;
+        VectorOrientation orientation = vectors[0].getOrientation();
+        if (orientation == VectorOrientation.ROW_MAJOR) {
+            int row=vectors.length;
+            int col=vectors[0].length();
+            double[][] output=new double[row][col];
+            for(int i=0;i<row;i++){
+                for(int j=0;j<col;j++){
+                    output[i][j]=vectors[i].get(j);
+                }
+            }
+            return output;
+        }
+        else { 
+            int cols = vectors.length;
+            int rows = vectors[0].length();
+            double[][] output = new double[rows][cols];
+            for (int j = 0; j < cols; j++) {
+                for (int i = 0; i < rows; i++) {
+                    output[i][j] = vectors[j].get(i);
+                }
+            }
+            return output;
+        }
     }
 
     public SharedVector get(int index) {
         //return vector at index
+        if (vectors == null)
+             return null;
         return vectors[index];
     }
 
     public int length() {
         //return number of stored vectors
+        if(vectors == null){
+            return 0;
+        }
         return vectors.length;
     }
 

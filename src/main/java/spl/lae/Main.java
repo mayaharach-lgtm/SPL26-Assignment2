@@ -28,10 +28,7 @@ public class Main {
       catch(Exception e){
          OutputWriter.write(e.getMessage(), outputPath);
       }
-      finally{
-        if(engine!=null){
-          engine.shutdown();
-        }
-      }
+      System.out.println(engine.getWorkerReport());
     }
+
 }
