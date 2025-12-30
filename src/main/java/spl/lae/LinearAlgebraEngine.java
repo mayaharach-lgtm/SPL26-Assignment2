@@ -52,20 +52,33 @@ public class LinearAlgebraEngine {
         List<ComputationNode> ch = node.getChildren();
         if (ch == null || ch.isEmpty())
             throw new IllegalArgumentException("Node has no operands");
+
+        if ((type == ComputationNodeType.NEGATE || type == ComputationNodeType.TRANSPOSE) && ch.size()!=1) {
+            throw new IllegalArgumentException("Unary op requires 1 operand");
+        }
+        if ((type == ComputationNodeType.ADD || type == ComputationNodeType.MULTIPLY) && ch.size()!=2) {
+            throw new IllegalArgumentException("Unary op requires 2 operand");
+        }
         ComputationNode left = ch.get(0);
         leftMatrix = new SharedMatrix(left.getMatrix());
-        rightMatrix = null;
-        if (type == ComputationNodeType.ADD || type == ComputationNodeType.MULTIPLY) {
-            if (ch.size() != 2) throw new IllegalArgumentException("Binary op requires 2 operands");
-                ComputationNode right = ch.get(1);
+
+        if (type == ComputationNodeType.ADD) {
+            ComputationNode right = ch.get(1);
             rightMatrix = new SharedMatrix(right.getMatrix());
+        }
+        else if(type==ComputationNodeType.MULTIPLY){
+            ComputationNode right = ch.get(1);
+            rightMatrix = new SharedMatrix(right.getMatrix());
+            rightMatrix.loadColumnMajor(rightMatrix.readRowMajor());
+        }
+        else{
+            rightMatrix=null;
         }
 
         if(type==ComputationNodeType.ADD){
             this.executor.submitAll(createAddTasks());
         }
         else if(type==ComputationNodeType.MULTIPLY){
-            rightMatrix.loadColumnMajor(rightMatrix.readRowMajor());
             this.executor.submitAll(createMultiplyTasks());
         }
         else if(type==ComputationNodeType.NEGATE){

@@ -45,10 +45,10 @@ public class TiredExecutor {
                 finally {
                     inFlight.decrementAndGet();
                     synchronized (this) {
+                        idleMinHeap.add(currworker);
                         this.notifyAll(); 
                     }
                 }
-                idleMinHeap.add(currworker);
             };
             currworker.newTask(newtask);
         }
