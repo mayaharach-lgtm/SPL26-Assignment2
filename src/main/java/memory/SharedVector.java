@@ -13,6 +13,8 @@ public class SharedVector {
     }
 
     public double get(int index) {
+        // Acquires a read lock to ensure thread-safe access to vector
+        // data/metadata while allowing multiple concurrent readers.
         readLock();
         double output=0;
 
@@ -26,6 +28,8 @@ public class SharedVector {
     }
 
     public int length() {
+        // Acquires a read lock to ensure thread-safe access to vector
+        // data/metadata while allowing multiple concurrent readers.
         readLock();
         int output=0;
         try{
@@ -38,6 +42,8 @@ public class SharedVector {
     }
 
     public VectorOrientation getOrientation() {
+        // Acquires a read lock to ensure thread-safe access to vector
+        // data/metadata while allowing multiple concurrent readers.
         readLock();
         VectorOrientation output=null;
         try{
@@ -66,6 +72,8 @@ public class SharedVector {
     }
 
     public void transpose() {
+        // Acquires an exclusive write lock to prevent race conditions while modifying
+        // the vector's underlying data or orientation.
         writeLock();
         try{
         this.orientation = (this.orientation == VectorOrientation.ROW_MAJOR) ? 
@@ -77,6 +85,8 @@ public class SharedVector {
     }
 
     public void add(SharedVector other) {
+        // Locks the current vector for writing and the other vector for reading
+        //  to ensure consistency during the in-place addition.
         other.readLock();
         try{
             writeLock();
@@ -100,6 +110,8 @@ public class SharedVector {
     }
 
     public void negate() {
+        // Acquires an exclusive write lock to prevent race conditions while modifying
+        // the vector's underlying data or orientation.
         writeLock();
         try{
             for(int i=0;i<vector.length;i++){
@@ -114,6 +126,8 @@ public class SharedVector {
     public double dot(SharedVector other) {
         if((this.vector.length != other.vector.length))
             throw new RuntimeException("Illegal action- vectors should be in the same size");
+        // Acquires read locks on both vectors to perform a thread-safe
+        // dot product calculation without blocking other readers.
         this.readLock();
         other.readLock();
         double output=0;
@@ -143,6 +157,8 @@ public class SharedVector {
             throw new RuntimeException("Not computable");
 
         double[] newVector= new double[matrix.length()];
+        // Uses a write lock because this operation updates the vector's
+        // internal array with the result of the matrix multiplication.
         writeLock();
         try{
             for(int i=0;i<matrix.length();i++){

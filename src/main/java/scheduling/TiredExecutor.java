@@ -89,7 +89,7 @@ public class TiredExecutor {
         for (TiredThread worker : workers) {
             if (worker != null) {
                 long totalIdle = worker.getTimeIdle(); 
-                report += "Worker " + worker.getId() +
+                report += "Worker " + worker.getWorkerId() +
                           " | FatigueFactor=" + worker.getFatigue() +
                           " | Busy=" + worker.isBusy() +
                           " | Alive=" + worker.isAlive() +

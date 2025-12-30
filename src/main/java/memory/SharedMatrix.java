@@ -53,7 +53,6 @@ public class SharedMatrix {
     }
 
     public double[][] readRowMajor() {
-        // return matrix contents as a row-major double[][]
         if (vectors == null || vectors.length == 0 || vectors[0] == null) {
             throw new IllegalArgumentException("Empty matrix");
         }
@@ -104,6 +103,8 @@ public class SharedMatrix {
 
     private void acquireAllVectorReadLocks(SharedVector[] vecs) {
         // acquire read lock for each vector
+        // Utility to batch-acquire read locks for all vectors in the matrix,
+        // ensuring a consistent snapshot during matrix-level read operations.
         for(int i=0;i<vectors.length;i++){
             vectors[i].readLock();
         }
@@ -111,6 +112,8 @@ public class SharedMatrix {
 
     private void releaseAllVectorReadLocks(SharedVector[] vecs) {
          // acquire read unlock for each vector
+         // Utility to batch-acquire read locks for all vectors in the matrix,
+         // ensuring a consistent snapshot during matrix-level read operations.
         for(int i=0;i<vectors.length;i++){
             vectors[i].readUnlock();
         }
@@ -118,13 +121,17 @@ public class SharedMatrix {
 
     private void acquireAllVectorWriteLocks(SharedVector[] vecs) {
         // acquire write lock for each vector
+        // Batch-acquires exclusive write locks for all vectors to safely update
+        // or initialize the matrix contents.
         for(int i=0;i<vectors.length;i++){
             vectors[i].writeLock();
         }
     }
 
     private void releaseAllVectorWriteLocks(SharedVector[] vecs) {
-        // TODO: release write locks
+        // release write locks
+        // Batch-acquires exclusive write locks for all vectors to safely update
+        // or initialize the matrix contents.
          for(int i=0;i<vectors.length;i++){
             vectors[i].writeUnlock();
         }
